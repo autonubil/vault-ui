@@ -1,0 +1,26 @@
+<div class="row">
+
+<h1>Settings</h1>
+<form name="settingsForm" ng-controller="VaultSettingsController">
+	<div ng-if="token.valid">
+
+	</div>
+	<div ng-if="!token.valid">
+		<div role="alert">
+			<span class="error" ng-show="myForm.input.$error.required">
+      Required!</span>
+			<span class="error" ng-show="myForm.input.$error.pattern">
+      Single word only!</span>
+		</div>
+		<label>Server URL:
+        <input type="url" name="serverUrl" ng-model="serverUrl" required> 
+        </label>
+		<br/>
+		<label>Token: 
+        <input type="password" name="token" ng-model="token" ng-minlength="36" ng-maxlength="36" required>
+        </label>
+		<br/><br/>
+		<button ng-click="update(serverUrl, token)">Authenticate</button>
+	</div>
+</form>
+</div>

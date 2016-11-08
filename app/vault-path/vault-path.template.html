@@ -1,0 +1,21 @@
+<div ng-if="loaded" style="padding-left:20px">
+	<div ng-repeat="subPath in pathes">
+		<span role="button" ng-click="togglePath(path + subPath +'/')" ng-class="pathStates[path +  subPath+'/'] ? 'glyphicon glyphicon-folder-open' : 'glyphicon glyphicon-folder-close'"
+			aria-hidden="true"></span>
+		<span ng-click="selectPath(path + subPath+'/')">&nbsp;{{subPath}}</span>
+		<div ng-if="pathStates[path   + subPath+'/']">
+			<vault-path path="path +   subPath+'/'" name="subPath" type="type" subtype="subtype"></vault-path>
+		</div>
+	</div>
+
+	<div ng-repeat="item in items">
+		<span role="button" ng-click="selectDetails(path + item)" class="glyphicon glyphicon-list-alt" aria-hidden="true"></span>		&nbsp;
+		<span role="button" ng-click="selectDetails(path + item)">{{item}}</span>
+	</div>
+
+	<div ng-if="error" class="alert alert-warning" role="alert">
+		<i>{{error}}</i>
+	</div>
+</div>
+
+<div ng-if="!loaded" style="padding-left:20px"></div>

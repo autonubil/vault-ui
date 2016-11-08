@@ -1,0 +1,11 @@
+<div ng-if="obj.path">
+<h2>{{obj.path}}</h2>
+<div ng-jsoneditor ng-model="obj.content" options="options" style="width: 100%; height: 300px;">
+
+</div>
+<botton role="button" class"btn btn-default">Save</botton> <botton  role="button" class"btn btn-primary">Reload</botton>
+</div>
+<div ng-if="!obj.path">
+<h2>Details</h2>
+<i>No item selected</i>
+</div>

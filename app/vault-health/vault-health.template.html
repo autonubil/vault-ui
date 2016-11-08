@@ -1,0 +1,20 @@
+<div ng-if="health.cluster_name">
+    <div title="Cluster id: {{health.cluster_id}}">Cluster Name: {{health.cluster_name}}</div>
+    <div>
+    <span>Version: {{health.version}}</span>
+    <span>|</span>
+    <span>Server Time UTC: {{health.server_time_utc * 1000 | date:'yyyy-MM-dd HH:mm:ss Z'  }}</span>
+    </div>
+    <div>
+    <dispanv>Initialized: {{health.initialized}}</span>
+    <span>|</span> 
+    <dspaniv>Sealed: {{health.sealed}}</span>
+    <span>|</span>
+    <span>Standby: {{health.standby}}</span>
+    <span>|</span>
+    <span>Initialized: {{health.initialized}}</span>
+    </div>
+</div>
+<div ng-if="!health.cluster_name">
+<i>Please configure Vault Server</i>
+</div>

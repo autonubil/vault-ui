@@ -1,0 +1,14 @@
+<div ng-if="tokenInfo.display_name">
+    <div>Token: {{tokenInfo.display_name}}</div>
+    <div>
+    <span>Path: {{tokenInfo.path}}</span>
+    </div>
+    <div>
+    <span>Policies: {{tokenInfo.policies | json}}</span>
+    </div>
+    
+    <!-- {{tokenInfo}} -->
+</div>
+<div ng-if="!tokenInfo.display_name">
+<i>Not Authenticated</i>
+</div>

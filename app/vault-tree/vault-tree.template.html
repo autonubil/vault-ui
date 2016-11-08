@@ -1,0 +1,41 @@
+<h2>{{type}}</h2>
+<div ng-if="type == 'mount'">
+	<div ng-repeat="mount in mounts track by mount.path">
+		<div title="{{mount.type}}{{mount.description ? ' ('+mount.description + ')' : ''}} | Default TTL {{mount.config.default_lease_ttl == 0 ? 'n/a' :  mount.config.default_lease_ttl |  duration:'hh:mm:ss:sss'}} | Max TTL: {{mount.config.max_lease_ttl == 0 ? 'n/a' :   mount.config.max_lease_ttl | duration:'hh:mm:ss:sss'}}">
+			<span role="button" ng-click="toggleMount(mount.path)" ng-class="mount.type == 'cubbyhole'  ? 'glyphicon glyphicon-user' :  mount.type == 'pki'  ? 'glyphicon glyphicon-certificate' : mount.type == 'system'  ? 'glyphicon glyphicon-cog' : 'glyphicon glyphicon-lock'"
+				aria-hidden="true"></span>
+			<span role="button" ng-click="selectMount(mount.path)">&nbsp;{{mount.path}}</span>
+		</div>
+		<div ng-if="itemExpanded[mount.path]">
+			<vault-path path="mount.path+'/'" name="mount.path" type="type" subtype="mount.type"></vault-path>
+		</div>
+	</div>
+</div>
+
+<div ng-if="type == 'policy'">
+	<div ng-repeat="policy in policies track by $index">
+
+		<div>
+			<span role="button" ng-click="selectPolicy(policy)" class="glyphicon glyphicon-cog"
+				aria-hidden="true"></span>
+			<span role="button" ng-click="selectPolicy(policy)">&nbsp;{{policy}}</span>
+		</div>
+		<div ng-if="policyExpanded[policy]">
+			<vault-path path="policy+'/'" name="policy" type="type"  ></vault-path>
+		</div>
+	</div>
+</div>
+
+
+<div ng-if="type == 'auth'">
+	<div ng-repeat="(authMethod, authInfo) in authMethods">
+		<div title="{{authInfo.type}}{{authInfo.config.description ?' ('+authInfo.config.description+ ')' : ''}} | Default TTL {{authInfo.config.default_lease_ttl == 0 ? 'n/a' :  authInfo.config.default_lease_ttl |  duration:'hh:mm:ss:sss'}} | Max TTL: {{authInfo.config.max_lease_ttl == 0 ? 'n/a' :   authInfo.config.max_lease_ttl | duration:'hh:mm:ss:sss'}}">
+			<span role="button" ng-click="toggleAuthMethod('auth/'+authMethod)" ng-class="auth.type == 'cubbyhole'  ? 'glyphicon glyphicon-user' :  auth.type == 'pki'  ? 'glyphicon glyphicon-certificate' : auth.type == 'system'  ? 'glyphicon glyphicon-cog' : 'glyphicon glyphicon-lock'"
+				aria-hidden="true"></span>
+			<span role="button" ng-click="toggleAuthMethod('auth/'+authMethod)">&nbsp;{{authMethod.substring(0,authMethod.length-1)}}</span>
+		</div>
+		<div ng-if="authExpanded['auth/'+authMethod]">
+			<vault-path path="'auth/'+authMethod" name="authMethod.substring(0,authMethod.length-1)" type="type" subtype="authInfo.type" ></vault-path>
+		</div>
+	</div>
+</div>
