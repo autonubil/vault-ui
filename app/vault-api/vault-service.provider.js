@@ -89,7 +89,7 @@ angular
                     self.readPath(path).then(function (val) {
                             self.privateCurrentItem = {
                                 path: path,
-                                content: val ? val.data : null
+                                content: val ? val.hasOwnProperty('data') ?   val.data : val : null
                             }
                             $rootScope.$broadcast("vaultApi.refresh.currentItem");
                         }, function (reason) { 
@@ -133,11 +133,12 @@ angular
                             $rootScope.$broadcast("vaultApi.refresh.serverInfo");
                         }, function (reason) { console.log(reason); reject(reason); })
                         self.validateToken().then(function (val) {
-                            self.privateTokenInfo = val.data;
+                            self.privateTokenInfo =  val.hasOwnProperty('data') ?   val.data : val;
                             $rootScope.$broadcast("vaultApi.refresh.tokenInfo");
                             self.listMounts().then(function (val) {
+                                val = val.hasOwnProperty('data') ?   val.data : val;
                                 self.privateMounts = [];
-                                angular.forEach(val.data, function(mountInfo, mountPoint) {
+                                angular.forEach(val, function(mountInfo, mountPoint) {
                                     var sanitizedPath = self.sanitizePath(mountPoint);
                                     if (sanitizedPath != 'sys') { 
                                         mountInfo['path'] = sanitizedPath;
@@ -147,7 +148,7 @@ angular
                                 $rootScope.$broadcast("vaultApi.refresh.mounts");
 
                                 self.listAuthMethods().then(function (val) {
-                                    self.privateAuthMethods = val.data;
+                                    self.privateAuthMethods = val.hasOwnProperty('data') ?   val.data : val;
                                     $rootScope.$broadcast("vaultApi.refresh.authMethods");
                                     self.listPolicies().then(function (val) {
                                         self.privatePolicies = val.policies;

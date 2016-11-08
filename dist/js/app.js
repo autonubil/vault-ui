@@ -47,6 +47,44 @@ angular.module('vaultUI', ['underscore', 'jQuery', 'ngRoute', 'restangular', 'Lo
 
     console.log('Script.js loaded');
 
+function VaultContentController($rootScope, $scope, $routeParams, vaultService) {
+
+  $scope.options = {
+      mode: 'code',
+      modes: ['tree', 'code'],
+      search: true};
+
+  if ($routeParams.path) {
+    $scope.obj =  {
+        path : $routeParams.path,
+        content: {info: "loading...."}
+    }
+    
+  } else {
+    $scope.obj = vaultService.currentItem();
+  }
+  
+  var unbind = $rootScope.$on("vaultApi.refresh.currentItem", function () {
+      $scope.obj = vaultService.currentItem();
+  });
+  $scope.$on('$destroy', unbind);
+
+  $scope.btnClick = function() {
+    $scope.obj.options.mode = 'code'; //should switch you to code view
+  }
+};
+
+
+angular.module('vaultUI')
+  .component('vaultContent', {
+    templateUrl: 'vault-content/vault-content.template.html',
+    controller: ['$rootScope', '$scope', '$routeParams', 'vaultService',  VaultContentController],
+    bindings: {
+      name: '<',
+      path: '<'
+    }
+  });
+
 // Declare factory
 angular
     .module('vaultApi', ['restangular'])
@@ -138,7 +176,7 @@ angular
                     self.readPath(path).then(function (val) {
                             self.privateCurrentItem = {
                                 path: path,
-                                content: val ? val.data : null
+                                content: val ? val.hasOwnProperty('data') ?   val.data : val : null
                             }
                             $rootScope.$broadcast("vaultApi.refresh.currentItem");
                         }, function (reason) { 
@@ -182,11 +220,12 @@ angular
                             $rootScope.$broadcast("vaultApi.refresh.serverInfo");
                         }, function (reason) { console.log(reason); reject(reason); })
                         self.validateToken().then(function (val) {
-                            self.privateTokenInfo = val.data;
+                            self.privateTokenInfo =  val.hasOwnProperty('data') ?   val.data : val;
                             $rootScope.$broadcast("vaultApi.refresh.tokenInfo");
                             self.listMounts().then(function (val) {
+                                val = val.hasOwnProperty('data') ?   val.data : val;
                                 self.privateMounts = [];
-                                angular.forEach(val.data, function(mountInfo, mountPoint) {
+                                angular.forEach(val, function(mountInfo, mountPoint) {
                                     var sanitizedPath = self.sanitizePath(mountPoint);
                                     if (sanitizedPath != 'sys') { 
                                         mountInfo['path'] = sanitizedPath;
@@ -196,7 +235,7 @@ angular
                                 $rootScope.$broadcast("vaultApi.refresh.mounts");
 
                                 self.listAuthMethods().then(function (val) {
-                                    self.privateAuthMethods = val.data;
+                                    self.privateAuthMethods = val.hasOwnProperty('data') ?   val.data : val;
                                     $rootScope.$broadcast("vaultApi.refresh.authMethods");
                                     self.listPolicies().then(function (val) {
                                         self.privatePolicies = val.policies;
@@ -214,44 +253,6 @@ angular
             return vaultApi;
         }];
     });
-function VaultContentController($rootScope, $scope, $routeParams, vaultService) {
-
-  $scope.options = {
-      mode: 'code',
-      modes: ['tree', 'code'],
-      search: true};
-
-  if ($routeParams.path) {
-    $scope.obj =  {
-        path : $routeParams.path,
-        content: {info: "loading...."}
-    }
-    
-  } else {
-    $scope.obj = vaultService.currentItem();
-  }
-  
-  var unbind = $rootScope.$on("vaultApi.refresh.currentItem", function () {
-      $scope.obj = vaultService.currentItem();
-  });
-  $scope.$on('$destroy', unbind);
-
-  $scope.btnClick = function() {
-    $scope.obj.options.mode = 'code'; //should switch you to code view
-  }
-};
-
-
-angular.module('vaultUI')
-  .component('vaultContent', {
-    templateUrl: 'vault-content/vault-content.template.html',
-    controller: ['$rootScope', '$scope', '$routeParams', 'vaultService',  VaultContentController],
-    bindings: {
-      name: '<',
-      path: '<'
-    }
-  });
-
 // VaultHealthComponent
 
 function VaultHealthController($scope, $rootScope, vaultService) {
