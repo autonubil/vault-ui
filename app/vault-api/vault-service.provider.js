@@ -12,50 +12,46 @@ angular
         var privateCurrentItem = {};
 
         this.$get = ['Restangular', 'localStorageService', '$q', '$rootScope', function(Restangular, localStorageService, $q, $rootScope) {
-            return {
-                
+            var vaultApi =  {
                 policies : function() {return [].concat (this.privatePolicies);},
                 mounts : function() {return [].concat (this.privateMounts);},
                 currentItem : function() {  return angular.copy(this.privateCurrentItem); },
                 tokenInfo : function() {  return angular.copy(this.privateTokenInfo); },
                 serverInfo : function() { return angular.copy(this.privateServerInfo); },
                 token: function () { return localStorageService.get('token'); },
-                authMethods: function () {return angular.copy(this.privateAuthMethods); }, 
+                serverUrl: function () { return localStorageService.get('serverUrl'); },
+                authMethods: function () {return angular.copy(this.privateAuthMethods); },
 
-                api: Restangular.withConfig(function (RestangularConfigurer) {
-                    RestangularConfigurer.setBaseUrl('http://192.168.23.151:9200');
-                    RestangularConfigurer.setDefaultHeaders(function () {
-                        return { 'X-Vault-Token': this.token() };
+                api: function(setToken) {
+                    var api =  Restangular.withConfig(function (RestangularConfigurer) {
+                        RestangularConfigurer.setDefaultHeaders({ 'X-Vault-Token': vaultApi.token() });
+                        RestangularConfigurer.setBaseUrl(vaultApi.serverUrl());
                     });
-                }),
+                    return api;
+                },
+
                 getHealth: function () {
-                    return this.api.all('v1/sys').one('health').get();
+                    return this.api().all('v1/sys').one('health').get();
                 },
                 validateToken: function () {
-                    this.api.setDefaultHeaders({ 'X-Vault-Token': this.token() });
-                    return this.api.all('v1/auth/token').one('lookup-self').get();
+                    return this.api(true).all('v1/auth/token').one('lookup-self').get();
                 },
                 listMounts: function () {
-                    this.api.setDefaultHeaders({ 'X-Vault-Token': this.token() });
-                    return this.api.all('v1/sys').one('mounts').get();
+                    return this.api(true).all('v1/sys').one('mounts').get();
                 },
                 listAuthMethods: function () {
-                  //  this.api.setDefaultHeaders({ 'X-Vault-Token': this.token() });
-                    return this.api.all('v1/sys').one('auth').get();
+                    return this.api().all('v1/sys').one('auth').get();
                 },
                 listPolicies: function () {
-                    this.api.setDefaultHeaders({ 'X-Vault-Token': this.token() });
-                    return this.api.all('v1/sys').one('policy').get();
+                    return this.api(true).all('v1/sys').one('policy').get();
                 },
                 readPath: function (path) {
-                    this.api.setDefaultHeaders({ 'X-Vault-Token': this.token() });
-                    return this.api.all('v1/'+ this.firstPathSegments(path)).one(this.lastPathSegment(path) ).get();
+                    return this.api(true).all('v1/'+ this.firstPathSegments(path)).one(this.lastPathSegment(path) ).get();
                 },
                 listPath: function (path) {
                       if (path == null)
                         return null;
-                    this.api.setDefaultHeaders({ 'X-Vault-Token': this.token() });
-                    return this.api.all('v1/'+this.firstPathSegments(path)).one(this.lastPathSegment(path)+"?list=true" ).get();
+                    return this.api(true).all('v1/'+this.firstPathSegments(path)).one(this.lastPathSegment(path)+"?list=true" ).get();
                 },
 
                 sanitizePath: function(path) {
@@ -132,7 +128,6 @@ angular
                      self = this;
                      self.reset();
                     return $q(function (resolve, reject) {
-                        self.api.setDefaultHeaders({ 'X-Vault-Token': self.token() });
                         self.getHealth().then(function (val) {
                             self.privateServerInfo = val;
                             $rootScope.$broadcast("vaultApi.refresh.serverInfo");
@@ -166,5 +161,7 @@ angular
                     });
                 }
             }
+
+            return vaultApi;
         }];
     });
