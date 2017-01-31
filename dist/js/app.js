@@ -47,44 +47,6 @@ angular.module('vaultUI', ['underscore', 'jQuery', 'ngRoute', 'restangular', 'Lo
 
     console.log('Script.js loaded');
 
-function VaultContentController($rootScope, $scope, $routeParams, vaultService) {
-
-  $scope.options = {
-      mode: 'code',
-      modes: ['tree', 'code'],
-      search: true};
-
-  if ($routeParams.path) {
-    $scope.obj =  {
-        path : $routeParams.path,
-        content: {info: "loading...."}
-    }
-    
-  } else {
-    $scope.obj = vaultService.currentItem();
-  }
-  
-  var unbind = $rootScope.$on("vaultApi.refresh.currentItem", function () {
-      $scope.obj = vaultService.currentItem();
-  });
-  $scope.$on('$destroy', unbind);
-
-  $scope.btnClick = function() {
-    $scope.obj.options.mode = 'code'; //should switch you to code view
-  }
-};
-
-
-angular.module('vaultUI')
-  .component('vaultContent', {
-    templateUrl: 'vault-content/vault-content.template.html',
-    controller: ['$rootScope', '$scope', '$routeParams', 'vaultService',  VaultContentController],
-    bindings: {
-      name: '<',
-      path: '<'
-    }
-  });
-
 // Declare factory
 angular
     .module('vaultApi', ['restangular'])
@@ -111,7 +73,9 @@ angular
 
                 api: function(setToken) {
                     var api =  Restangular.withConfig(function (RestangularConfigurer) {
-                        RestangularConfigurer.setDefaultHeaders({ 'X-Vault-Token': vaultApi.token() });
+                        if (setToken) {
+                            RestangularConfigurer.setDefaultHeaders({ 'X-Vault-Token': vaultApi.token() });
+                        }
                         RestangularConfigurer.setBaseUrl(vaultApi.serverUrl());
                     });
                     return api;
@@ -127,7 +91,7 @@ angular
                     return this.api(true).all('v1/sys').one('mounts').get();
                 },
                 listAuthMethods: function () {
-                    return this.api().all('v1/sys').one('auth').get();
+                    return this.api(true).all('v1/sys').one('auth').get();
                 },
                 listPolicies: function () {
                     return this.api(true).all('v1/sys').one('policy').get();
@@ -226,16 +190,24 @@ angular
                                 val = val.hasOwnProperty('data') ?   val.data : val;
                                 self.privateMounts = [];
                                 angular.forEach(val, function(mountInfo, mountPoint) {
+                                    if (val.hasOwnProperty(mountPoint) && mountPoint[mountPoint.length-1] == '/' ) {
                                     var sanitizedPath = self.sanitizePath(mountPoint);
-                                    if (sanitizedPath != 'sys') { 
-                                        mountInfo['path'] = sanitizedPath;
-                                        self.privateMounts.push(mountInfo);
+                                        if (sanitizedPath != 'sys' && sanitizedPath != null) { 
+                                            mountInfo['path'] = sanitizedPath;
+                                            self.privateMounts.push(mountInfo);
+                                        }
                                     }
                                 });
                                 $rootScope.$broadcast("vaultApi.refresh.mounts");
 
                                 self.listAuthMethods().then(function (val) {
-                                    self.privateAuthMethods = val.hasOwnProperty('data') ?   val.data : val;
+                                    self.privateAuthMethods = {};
+                                    var data = val.hasOwnProperty('data') ?   val.data : val;
+                                    angular.forEach(data, function(value, key) {
+                                        if (data.hasOwnProperty(key) && value && value.hasOwnProperty('type')) {
+                                            self.privateAuthMethods[key] = value;
+                                        }
+                                    });
                                     $rootScope.$broadcast("vaultApi.refresh.authMethods");
                                     self.listPolicies().then(function (val) {
                                         self.privatePolicies = val.policies;
@@ -253,6 +225,44 @@ angular
             return vaultApi;
         }];
     });
+function VaultContentController($rootScope, $scope, $routeParams, vaultService) {
+
+  $scope.options = {
+      mode: 'code',
+      modes: ['tree', 'code'],
+      search: true};
+
+  if ($routeParams.path) {
+    $scope.obj =  {
+        path : $routeParams.path,
+        content: {info: "loading...."}
+    }
+    
+  } else {
+    $scope.obj = vaultService.currentItem();
+  }
+  
+  var unbind = $rootScope.$on("vaultApi.refresh.currentItem", function () {
+      $scope.obj = vaultService.currentItem();
+  });
+  $scope.$on('$destroy', unbind);
+
+  $scope.btnClick = function() {
+    $scope.obj.options.mode = 'code'; //should switch you to code view
+  }
+};
+
+
+angular.module('vaultUI')
+  .component('vaultContent', {
+    templateUrl: 'vault-content/vault-content.template.html',
+    controller: ['$rootScope', '$scope', '$routeParams', 'vaultService',  VaultContentController],
+    bindings: {
+      name: '<',
+      path: '<'
+    }
+  });
+
 // VaultHealthComponent
 
 function VaultHealthController($scope, $rootScope, vaultService) {
@@ -348,8 +358,13 @@ function VaultPathController($scope, $rootScope, $routeParams, $location, vaultS
         $scope.items = [ "config"];
         $scope.loaded = true;
         return;
+        } else     if (this.type == "auth" && this.subtype == 'token' && this.path.split('/').length == 3 ) {
+        $scope.pathes = ["accessors", "roles"];
+        $scope.items = [ ];
+        $scope.loaded = true;
+        return;
       }  else     if (this.type == "auth" && this.subtype == 'chef' && this.path.split('/').length == 3 ) {
-        $scope.pathes = ["roles" ,"groups", "users"];
+        $scope.pathes = ["roles" ,"pathes"];
         $scope.items = [ "config"];
         $scope.loaded = true;
         return;
@@ -385,9 +400,10 @@ function VaultPathController($scope, $rootScope, $routeParams, $location, vaultS
         $scope.loaded = true;
       } 
       else  vaultService.listPath(this.path).then(function (val) {
-        var pathes = []
-        var items = []
-        for (var i = 0; i < val.data.keys.length; i++) {
+        var pathes = [];
+        var items = [];
+        var data = val.hasOwnProperty('data') ?   val.data : val; 
+        for (var i = 0; i < data.keys.length; i++) {
           var key = val.data.keys[i];
           var path = key;
           if (key.endsWith('/')) {

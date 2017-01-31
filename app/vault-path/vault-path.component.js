@@ -75,8 +75,13 @@ function VaultPathController($scope, $rootScope, $routeParams, $location, vaultS
         $scope.items = [ "config"];
         $scope.loaded = true;
         return;
+        } else     if (this.type == "auth" && this.subtype == 'token' && this.path.split('/').length == 3 ) {
+        $scope.pathes = ["accessors", "roles"];
+        $scope.items = [ ];
+        $scope.loaded = true;
+        return;
       }  else     if (this.type == "auth" && this.subtype == 'chef' && this.path.split('/').length == 3 ) {
-        $scope.pathes = ["roles" ,"groups", "users"];
+        $scope.pathes = ["roles" ,"pathes"];
         $scope.items = [ "config"];
         $scope.loaded = true;
         return;
@@ -112,9 +117,10 @@ function VaultPathController($scope, $rootScope, $routeParams, $location, vaultS
         $scope.loaded = true;
       } 
       else  vaultService.listPath(this.path).then(function (val) {
-        var pathes = []
-        var items = []
-        for (var i = 0; i < val.data.keys.length; i++) {
+        var pathes = [];
+        var items = [];
+        var data = val.hasOwnProperty('data') ?   val.data : val; 
+        for (var i = 0; i < data.keys.length; i++) {
           var key = val.data.keys[i];
           var path = key;
           if (key.endsWith('/')) {

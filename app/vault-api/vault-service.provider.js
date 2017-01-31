@@ -24,7 +24,9 @@ angular
 
                 api: function(setToken) {
                     var api =  Restangular.withConfig(function (RestangularConfigurer) {
-                        RestangularConfigurer.setDefaultHeaders({ 'X-Vault-Token': vaultApi.token() });
+                        if (setToken) {
+                            RestangularConfigurer.setDefaultHeaders({ 'X-Vault-Token': vaultApi.token() });
+                        }
                         RestangularConfigurer.setBaseUrl(vaultApi.serverUrl());
                     });
                     return api;
@@ -40,7 +42,7 @@ angular
                     return this.api(true).all('v1/sys').one('mounts').get();
                 },
                 listAuthMethods: function () {
-                    return this.api().all('v1/sys').one('auth').get();
+                    return this.api(true).all('v1/sys').one('auth').get();
                 },
                 listPolicies: function () {
                     return this.api(true).all('v1/sys').one('policy').get();
@@ -139,16 +141,24 @@ angular
                                 val = val.hasOwnProperty('data') ?   val.data : val;
                                 self.privateMounts = [];
                                 angular.forEach(val, function(mountInfo, mountPoint) {
+                                    if (val.hasOwnProperty(mountPoint) && mountPoint[mountPoint.length-1] == '/' ) {
                                     var sanitizedPath = self.sanitizePath(mountPoint);
-                                    if (sanitizedPath != 'sys') { 
-                                        mountInfo['path'] = sanitizedPath;
-                                        self.privateMounts.push(mountInfo);
+                                        if (sanitizedPath != 'sys' && sanitizedPath != null) { 
+                                            mountInfo['path'] = sanitizedPath;
+                                            self.privateMounts.push(mountInfo);
+                                        }
                                     }
                                 });
                                 $rootScope.$broadcast("vaultApi.refresh.mounts");
 
                                 self.listAuthMethods().then(function (val) {
-                                    self.privateAuthMethods = val.hasOwnProperty('data') ?   val.data : val;
+                                    self.privateAuthMethods = {};
+                                    var data = val.hasOwnProperty('data') ?   val.data : val;
+                                    angular.forEach(data, function(value, key) {
+                                        if (data.hasOwnProperty(key) && value && value.hasOwnProperty('type')) {
+                                            self.privateAuthMethods[key] = value;
+                                        }
+                                    });
                                     $rootScope.$broadcast("vaultApi.refresh.authMethods");
                                     self.listPolicies().then(function (val) {
                                         self.privatePolicies = val.policies;
